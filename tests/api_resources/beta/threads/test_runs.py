@@ -14,6 +14,8 @@ from openai.types.beta.threads import (
     Run,
 )
 
+# pyright: reportDeprecated=false
+
 base_url = os.environ.get("TEST_API_BASE_URL", "http://127.0.0.1:4010")
 
 
@@ -38,6 +40,7 @@ class TestRuns:
             metadata={},
             model="string",
             stream=False,
+            temperature=1,
             tools=[{"type": "code_interpreter"}, {"type": "code_interpreter"}, {"type": "code_interpreter"}],
         )
         assert_matches_type(Run, run, path=["response"])
@@ -95,6 +98,7 @@ class TestRuns:
             instructions="string",
             metadata={},
             model="string",
+            temperature=1,
             tools=[{"type": "code_interpreter"}, {"type": "code_interpreter"}, {"type": "code_interpreter"}],
         )
         run_stream.response.close()
@@ -492,6 +496,7 @@ class TestAsyncRuns:
             metadata={},
             model="string",
             stream=False,
+            temperature=1,
             tools=[{"type": "code_interpreter"}, {"type": "code_interpreter"}, {"type": "code_interpreter"}],
         )
         assert_matches_type(Run, run, path=["response"])
@@ -549,6 +554,7 @@ class TestAsyncRuns:
             instructions="string",
             metadata={},
             model="string",
+            temperature=1,
             tools=[{"type": "code_interpreter"}, {"type": "code_interpreter"}, {"type": "code_interpreter"}],
         )
         await run_stream.response.aclose()
