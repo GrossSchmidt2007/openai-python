@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.19.0 (2024-04-15)
+
+Full Changelog: [v1.18.0...v1.19.0](https://github.com/openai/openai-python/compare/v1.18.0...v1.19.0)
+
+### Features
+
+* **errors:** add request_id property ([#1317](https://github.com/openai/openai-python/issues/1317)) ([f9eb77d](https://github.com/openai/openai-python/commit/f9eb77dca422b9456f4e3b31c7474046235eec1d))
+
+## 1.18.0 (2024-04-15)
+
+Full Changelog: [v1.17.1...v1.18.0](https://github.com/openai/openai-python/compare/v1.17.1...v1.18.0)
+
+### Features
+
+* **api:** add batch API ([#1316](https://github.com/openai/openai-python/issues/1316)) ([3e6f19e](https://github.com/openai/openai-python/commit/3e6f19e6e7489bf1c94944a5f8f9b1d4535cdc43))
+* **api:** updates ([#1314](https://github.com/openai/openai-python/issues/1314)) ([8281dc9](https://github.com/openai/openai-python/commit/8281dc956178f5de345645660081f7d0c15a57a6))
+
 ## 1.17.1 (2024-04-12)
 
 Full Changelog: [v1.17.0...v1.17.1](https://github.com/openai/openai-python/compare/v1.17.0...v1.17.1)
