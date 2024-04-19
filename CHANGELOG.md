@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.23.1 (2024-04-18)
+
+Full Changelog: [v1.23.0...v1.23.1](https://github.com/openai/openai-python/compare/v1.23.0...v1.23.1)
+
+### Bug Fixes
+
+* **api:** correct types for attachments ([#1342](https://github.com/openai/openai-python/issues/1342)) ([542d30c](https://github.com/openai/openai-python/commit/542d30c6dad4e139bf3eb443936d42b7b42dad54))
+
+## 1.23.0 (2024-04-18)
+
+Full Changelog: [v1.22.0...v1.23.0](https://github.com/openai/openai-python/compare/v1.22.0...v1.23.0)
+
+### Features
+
+* **api:** add request id property to response classes ([#1341](https://github.com/openai/openai-python/issues/1341)) ([444d680](https://github.com/openai/openai-python/commit/444d680cbb3745adbc27788213ae3312567136a8))
+
+
+### Documentation
+
+* **helpers:** fix example snippets ([#1339](https://github.com/openai/openai-python/issues/1339)) ([8929088](https://github.com/openai/openai-python/commit/8929088b206a04b4c5b85fb69b0b983fb56f9b03))
+
+## 1.22.0 (2024-04-18)
+
+Full Changelog: [v1.21.2...v1.22.0](https://github.com/openai/openai-python/compare/v1.21.2...v1.22.0)
+
+### Features
+
+* **api:** batch list endpoint ([#1338](https://github.com/openai/openai-python/issues/1338)) ([a776f38](https://github.com/openai/openai-python/commit/a776f387e3159f9a8f4dcaa7d0d3b78c2a884f91))
+
+
+### Chores
+
+* **internal:** ban usage of lru_cache ([#1331](https://github.com/openai/openai-python/issues/1331)) ([8f9223b](https://github.com/openai/openai-python/commit/8f9223bfe13200c685fc97c25ada3015a69c6df7))
+* **internal:** bump pyright to 1.1.359 ([#1337](https://github.com/openai/openai-python/issues/1337)) ([feec0dd](https://github.com/openai/openai-python/commit/feec0dd1dd243941a279c3224c5ca1d727d76676))
+
 ## 1.21.2 (2024-04-17)
 
 Full Changelog: [v1.21.1...v1.21.2](https://github.com/openai/openai-python/compare/v1.21.1...v1.21.2)
