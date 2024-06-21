@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.35.3 (2024-06-20)
+
+Full Changelog: [v1.35.2...v1.35.3](https://github.com/openai/openai-python/compare/v1.35.2...v1.35.3)
+
+### Bug Fixes
+
+* **tests:** add explicit type annotation ([9345f10](https://github.com/openai/openai-python/commit/9345f104889056b2ef6646d65375925a0a3bae03))
+
+## 1.35.2 (2024-06-20)
+
+Full Changelog: [v1.35.1...v1.35.2](https://github.com/openai/openai-python/compare/v1.35.1...v1.35.2)
+
+### Bug Fixes
+
+* **api:** add missing parallel_tool_calls arguments ([4041e4f](https://github.com/openai/openai-python/commit/4041e4f6ea1e2316179a82031001308be23a2524))
+
 ## 1.35.1 (2024-06-19)
 
 Full Changelog: [v1.35.0...v1.35.1](https://github.com/openai/openai-python/compare/v1.35.0...v1.35.1)
