@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.50.0 (2024-09-26)
+
+Full Changelog: [v1.49.0...v1.50.0](https://github.com/openai/openai-python/compare/v1.49.0...v1.50.0)
+
+### Features
+
+* **structured outputs:** add support for accessing raw responses ([#1748](https://github.com/openai/openai-python/issues/1748)) ([0189e28](https://github.com/openai/openai-python/commit/0189e28b0b062a28b16343da0460a4f0f4e17a9a))
+
+
+### Chores
+
+* **pydantic v1:** exclude specific properties when rich printing ([#1751](https://github.com/openai/openai-python/issues/1751)) ([af535ce](https://github.com/openai/openai-python/commit/af535ce6a523eca39438f117a3e55f16064567a9))
+
+## 1.49.0 (2024-09-26)
+
+Full Changelog: [v1.48.0...v1.49.0](https://github.com/openai/openai-python/compare/v1.48.0...v1.49.0)
+
+### Features
+
+* **api:** add omni-moderation model ([#1750](https://github.com/openai/openai-python/issues/1750)) ([05b50da](https://github.com/openai/openai-python/commit/05b50da5428d5c7b5ea09626bcd88f8423762bf8))
+
+
+### Chores
+
+* **internal:** update test snapshots ([#1749](https://github.com/openai/openai-python/issues/1749)) ([42f054e](https://github.com/openai/openai-python/commit/42f054ee7afa8ce8316c2ecd90608a0f7e13bfdd))
+
 ## 1.48.0 (2024-09-25)
 
 Full Changelog: [v1.47.1...v1.48.0](https://github.com/openai/openai-python/compare/v1.47.1...v1.48.0)
