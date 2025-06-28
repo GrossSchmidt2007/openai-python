@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.93.0 (2025-06-27)
+
+Full Changelog: [v1.92.3...v1.93.0](https://github.com/openai/openai-python/compare/v1.92.3...v1.93.0)
+
+### Features
+
+* **cli:** add support for fine_tuning.jobs ([#1224](https://github.com/openai/openai-python/issues/1224)) ([e362bfd](https://github.com/openai/openai-python/commit/e362bfd10dfd04176560b964470ab0c517c601f3))
+
+## 1.92.3 (2025-06-27)
+
+Full Changelog: [v1.92.2...v1.92.3](https://github.com/openai/openai-python/compare/v1.92.2...v1.92.3)
+
+### Bug Fixes
+
+* **client:** avoid encoding error with empty API keys ([5a3e64e](https://github.com/openai/openai-python/commit/5a3e64e0cc761dbaa613fb22ec16e7e73c3bcf72))
+
+
+### Documentation
+
+* **examples/realtime:** mention macOS requirements ([#2142](https://github.com/openai/openai-python/issues/2142)) ([27bf6b2](https://github.com/openai/openai-python/commit/27bf6b2a933c61d5ec23fd266148af888f69f5c1))
+
 ## 1.92.2 (2025-06-26)
 
 Full Changelog: [v1.92.1...v1.92.2](https://github.com/openai/openai-python/compare/v1.92.1...v1.92.2)
