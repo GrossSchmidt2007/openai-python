@@ -56,6 +56,26 @@ def _has_auth_header(headers: Headers) -> bool:
     return _has_header(headers, "Authorization") or _has_header(headers, "api-key")
 
 
+_AZURE_AUTH_ORIGIN = "openai.azure_auth_origin"
+
+
+def _origin(url: httpx2.URL) -> tuple[str, str, int | None]:
+    port = url.port
+    if port is None:
+        port = {"http": 80, "https": 443}.get(url.scheme)
+    return url.scheme, url.host, port
+
+
+def _strip_azure_api_key_on_redirect(request: httpx2.Request) -> None:
+    origin = request.extensions.get(_AZURE_AUTH_ORIGIN)
+    if origin is not None and origin != _origin(request.url):
+        request.headers.pop("api-key", None)
+
+
+async def _async_strip_azure_api_key_on_redirect(request: httpx2.Request) -> None:
+    _strip_azure_api_key_on_redirect(request)
+
+
 class MutuallyExclusiveAuthError(OpenAIError):
     def __init__(self) -> None:
         super().__init__(
@@ -129,7 +149,11 @@ class BaseAzureClient(BaseClient[_HttpxClientT, _DefaultStreamT]):
             if model is not None and "/deployments" not in str(self.base_url.path):
                 options.url = path_template("/deployments/{model}", model=model) + options.url
 
-        return super()._build_request(options, retries_taken=retries_taken)
+        request = super()._build_request(options, retries_taken=retries_taken)
+        # HTTPX preserves request extensions through redirects. Scope the hook
+        # to this Azure request, including when its HTTP client is shared.
+        request.extensions[_AZURE_AUTH_ORIGIN] = _origin(request.url)
+        return request
 
     @override
     def _prepare_url(self, url: str) -> httpx2.URL:
@@ -335,6 +359,10 @@ class AzureOpenAI(BaseAzureClient[httpx2.Client, Stream[Any]], OpenAI):
         self._azure_deployment = azure_deployment if azure_endpoint else None
         self._azure_endpoint = httpx2.URL(azure_endpoint) if azure_endpoint else None
 
+        hooks = self._client.event_hooks["request"]
+        if _strip_azure_api_key_on_redirect not in hooks:
+            hooks.append(_strip_azure_api_key_on_redirect)
+
     @override
     def copy(
         self,
@@ -415,11 +443,12 @@ class AzureOpenAI(BaseAzureClient[httpx2.Client, Stream[Any]], OpenAI):
 
         provider = self._azure_ad_token_provider
         if provider is not None:
-            token = provider()
-            if not token or not isinstance(token, str):  # pyright: ignore[reportUnnecessaryIsInstance]
-                raise ValueError(
-                    f"Expected `azure_ad_token_provider` argument to return a string but it returned {token}",
-                )
+            token = cast(object, provider())
+            if isinstance(token, str):
+                # Bypass subclass methods before validating or interpolating credentials.
+                token = str.__str__(token)
+            if not isinstance(token, str) or not token:
+                raise ValueError("Expected `azure_ad_token_provider` argument to return a non-empty string.")
             return token
 
         return None
@@ -682,6 +711,10 @@ class AsyncAzureOpenAI(BaseAzureClient[httpx2.AsyncClient, AsyncStream[Any]], As
         self._azure_deployment = azure_deployment if azure_endpoint else None
         self._azure_endpoint = httpx2.URL(azure_endpoint) if azure_endpoint else None
 
+        hooks = self._client.event_hooks["request"]
+        if _async_strip_azure_api_key_on_redirect not in hooks:
+            hooks.append(_async_strip_azure_api_key_on_redirect)
+
     @override
     def copy(
         self,
@@ -762,14 +795,15 @@ class AsyncAzureOpenAI(BaseAzureClient[httpx2.AsyncClient, AsyncStream[Any]], As
 
         provider = self._azure_ad_token_provider
         if provider is not None:
-            token = provider()
+            token = cast(object, provider())
             if inspect.isawaitable(token):
                 token = await token
-            if not token or not isinstance(cast(Any, token), str):
-                raise ValueError(
-                    f"Expected `azure_ad_token_provider` argument to return a string but it returned {token}",
-                )
-            return str(token)
+            if isinstance(token, str):
+                # Bypass subclass methods before validating or interpolating credentials.
+                token = str.__str__(token)
+            if not isinstance(token, str) or not token:
+                raise ValueError("Expected `azure_ad_token_provider` argument to return a non-empty string.")
+            return token
 
         return None
 

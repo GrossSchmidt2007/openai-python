@@ -682,7 +682,7 @@ class AsyncRealtimeConnectionManager:
 
     async def _connect_ws(self, extra_query: Query, extra_headers: Headers) -> AsyncWebSocketConnection:
         try:
-            from websockets.asyncio.client import connect
+            from ...lib._websocket import _WebSocketConnect as connect
         except ImportError as exc:
             raise OpenAIError("You need to install `openai[realtime]` to use this method") from exc
 
@@ -691,6 +691,8 @@ class AsyncRealtimeConnectionManager:
         if self.__call_id is not omit:
             extra_query = {**extra_query, "call_id": self.__call_id}
         if is_async_azure_client(self.__client):
+            from ...lib._azure_websocket import _AzureWebSocketConnect as connect
+
             model = self.__model
             if not model:
                 raise OpenAIError("`model` is required for Azure Realtime API")
