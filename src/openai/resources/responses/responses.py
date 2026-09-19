@@ -1422,7 +1422,7 @@ class Responses(SyncAPIResource):
             ),
             # we turn the `Response` instance into a `ParsedResponse`
             # in the `parser` function above
-            cast_to=cast(Type[ParsedResponse[TextFormatT]], Response),
+            cast_to=cast("Type[ParsedResponse[TextFormatT]]", Response),
         )
 
     @overload
@@ -1828,7 +1828,6 @@ class Responses(SyncAPIResource):
                 "gpt-3.5-turbo-1106",
                 "gpt-3.5-turbo-0125",
                 "gpt-3.5-turbo-16k-0613",
-                "gpt-5.1-mini",
                 "o1-pro",
                 "o1-pro-2025-03-19",
                 "o3-pro",
@@ -3305,7 +3304,7 @@ class AsyncResponses(AsyncAPIResource):
             ),
             # we turn the `Response` instance into a `ParsedResponse`
             # in the `parser` function above
-            cast_to=cast(Type[ParsedResponse[TextFormatT]], Response),
+            cast_to=cast("Type[ParsedResponse[TextFormatT]]", Response),
         )
 
     @overload
@@ -3711,7 +3710,6 @@ class AsyncResponses(AsyncAPIResource):
                 "gpt-3.5-turbo-1106",
                 "gpt-3.5-turbo-0125",
                 "gpt-3.5-turbo-16k-0613",
-                "gpt-5.1-mini",
                 "o1-pro",
                 "o1-pro-2025-03-19",
                 "o3-pro",
