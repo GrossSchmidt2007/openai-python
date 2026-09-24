@@ -1,5 +1,37 @@
 # Changelog
 
+## [3.19.2](https://github.com/openai/openai-python/compare/v3.19.1...v3.19.2) (2026-09-23)
+
+
+### Bug Fixes
+
+* preserve single files for fallback extraction paths ([#3875](https://github.com/openai/openai-python/issues/3875)) ([bfd3680](https://github.com/openai/openai-python/commit/bfd3680c8d3b715bb3175b82cd0fa1c1fb53162f))
+
+
+### Chores
+
+* **api:** clarify approximate web search location defaults ([#3953](https://github.com/openai/openai-python/issues/3953)) ([a95c95e](https://github.com/openai/openai-python/commit/a95c95ed372476168e9893723ff694ead5db8586))
+* **api:** clarify Realtime modality array definitions ([#3954](https://github.com/openai/openai-python/issues/3954)) ([e79cf53](https://github.com/openai/openai-python/commit/e79cf53878b1d8580fac3a46e375eb98d9ca161d))
+* **api:** correct fine-tuning bounds and Realtime response reference ([#3949](https://github.com/openai/openai-python/issues/3949)) ([325a948](https://github.com/openai/openai-python/commit/325a948a545add0201e082e778ca11b90ddb9426))
+
+## [3.19.1](https://github.com/openai/openai-python/compare/v3.19.0...v3.19.1) (2026-09-23)
+
+
+### Bug Fixes
+
+* **chat:** preserve single-pass tool iterables ([#3770](https://github.com/openai/openai-python/issues/3770)) ([33ffa1f](https://github.com/openai/openai-python/commit/33ffa1f9fa4f49553ab0287b9359283be818fe40))
+* **client:** merge HTTP headers case-insensitively ([#3486](https://github.com/openai/openai-python/issues/3486)) ([5e39766](https://github.com/openai/openai-python/commit/5e39766dd7ba2802c97f5305721a621098cf0e38))
+
+
+### Chores
+
+* **api:** clarify Chat Completions seed limits ([#3945](https://github.com/openai/openai-python/issues/3945)) ([be9d666](https://github.com/openai/openai-python/commit/be9d66628ad7377bd36fe5a76ae6d735843f0e76))
+
+
+### Documentation
+
+* clarify collaborator-only pull request policy ([#3948](https://github.com/openai/openai-python/issues/3948)) ([ead1fa2](https://github.com/openai/openai-python/commit/ead1fa2473257ba5d7be08484aca4349649e6245))
+
 ## [3.19.0](https://github.com/openai/openai-python/compare/v3.18.0...v3.19.0) (2026-09-22)
 
 
