@@ -16,6 +16,8 @@ from ..._utils import is_given, path_template, maybe_transform, strip_not_given,
 from ..._compat import cached_property
 from ..._models import FinalRequestOptions, construct_type_unchecked
 from ..._resource import SyncAPIResource, AsyncAPIResource
+from ..._constants import DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES
+from ...types.live import decision_item_create_event_param
 from ..._exceptions import OpenAIError, WebSocketConnectionClosedError
 from ..._send_queue import SendQueue
 from ..._base_client import _merge_mappings
@@ -54,7 +56,7 @@ class Sideband(SyncAPIResource):
         max_retries: int = 5,
         initial_delay: float = 0.5,
         max_delay: float = 8.0,
-        max_queue_size: int = 1_048_576,
+        max_queue_size: int = DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES,
     ) -> SidebandConnectionManager:
         """Attach to an existing Live session.
 
@@ -88,7 +90,7 @@ class AsyncSideband(AsyncAPIResource):
         max_retries: int = 5,
         initial_delay: float = 0.5,
         max_delay: float = 8.0,
-        max_queue_size: int = 1_048_576,
+        max_queue_size: int = DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES,
     ) -> AsyncSidebandConnectionManager:
         """Attach to an existing Live session.
 
@@ -113,6 +115,7 @@ class AsyncSidebandConnection(AsyncWebSocketConnectionBase):
     """Represents a live WebSocket connection to the Sideband API"""
 
     session: AsyncSidebandSessionResource
+    decision: AsyncSidebandDecisionResource
     response: AsyncSidebandResponseResource
 
     _connection: AsyncWebSocketConnection
@@ -139,12 +142,15 @@ class AsyncSidebandConnection(AsyncWebSocketConnectionBase):
             max_delay=max_delay,
             extra_query=extra_query,
             extra_headers=extra_headers,
-            send_queue=send_queue,
+            send_queue=(
+                send_queue if send_queue is not None else SendQueue(max_bytes=DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES)
+            ),
             logger=log,
         )
         self._event_handler_registry = EventHandlerRegistry(use_lock=False)
 
         self.session = AsyncSidebandSessionResource(self)
+        self.decision = AsyncSidebandDecisionResource(self)
         self.response = AsyncSidebandResponseResource(self)
 
     async def __aiter__(self) -> AsyncIterator[ConnectServerEvent]:
@@ -343,7 +349,7 @@ class AsyncSidebandConnectionManager:
         max_retries: int = 5,
         initial_delay: float = 0.5,
         max_delay: float = 8.0,
-        max_queue_size: int = 1_048_576,
+        max_queue_size: int = DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES,
     ) -> None:
         self.__client = client
         self.__session_id = session_id
@@ -521,6 +527,7 @@ class SidebandConnection(WebSocketConnectionBase):
     """Represents a live WebSocket connection to the Sideband API"""
 
     session: SidebandSessionResource
+    decision: SidebandDecisionResource
     response: SidebandResponseResource
 
     _connection: WebSocketConnection
@@ -547,12 +554,15 @@ class SidebandConnection(WebSocketConnectionBase):
             max_delay=max_delay,
             extra_query=extra_query,
             extra_headers=extra_headers,
-            send_queue=send_queue,
+            send_queue=(
+                send_queue if send_queue is not None else SendQueue(max_bytes=DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES)
+            ),
             logger=log,
         )
         self._event_handler_registry = EventHandlerRegistry(use_lock=True)
 
         self.session = SidebandSessionResource(self)
+        self.decision = SidebandDecisionResource(self)
         self.response = SidebandResponseResource(self)
 
     def __iter__(self) -> Iterator[ConnectServerEvent]:
@@ -745,7 +755,7 @@ class SidebandConnectionManager:
         max_retries: int = 5,
         initial_delay: float = 0.5,
         max_delay: float = 8.0,
-        max_queue_size: int = 1_048_576,
+        max_queue_size: int = DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES,
     ) -> None:
         self.__client = client
         self.__session_id = session_id
@@ -938,6 +948,10 @@ class SidebandSessionResource(BaseSidebandConnectionResource):
         return SidebandSessionInstructionsResource(self._connection)
 
     @cached_property
+    def output_audio(self) -> SidebandSessionOutputAudioResource:
+        return SidebandSessionOutputAudioResource(self._connection)
+
+    @cached_property
     def thinking(self) -> SidebandSessionThinkingResource:
         return SidebandSessionThinkingResource(self._connection)
 
@@ -951,7 +965,8 @@ class SidebandSessionResource(BaseSidebandConnectionResource):
         )
 
     def update(self, *, session: SessionUpdateConfigParam, event_id: Optional[str] | Omit = omit) -> None:
-        """Update the delegation settings of an active Live session.
+        """
+        Update the delegation settings or transcript triggers of an active Live session.
 
         The server acknowledges accepted changes with `session.updated`.
         """
@@ -966,7 +981,10 @@ class SidebandSessionResource(BaseSidebandConnectionResource):
 class SidebandSessionCommentaryResource(BaseSidebandConnectionResource):
     def append(self, *, content: str, delegation_id: Optional[str], event_id: Optional[str] | Omit = omit) -> None:
         """
-        Provide context the Live model can communicate to the user, optionally for an existing client delegation.
+        Provide context the Live model can communicate to the user, optionally for an
+        existing client delegation.
+
+        Rejected while an audio fixture is active.
         """
         self._connection.send(
             cast(
@@ -996,7 +1014,7 @@ class SidebandSessionInputAudioResource(BaseSidebandConnectionResource):
     def unmute(self, *, event_id: Optional[str] | Omit = omit) -> None:
         """Resume audio input to a Live model after muting it.
 
-        The server acknowledges with `session.input_audio.unmuted`.
+        The server acknowledges with `session.input_audio.unmuted`. An active audio fixture still pauses inference until playback finishes.
         """
         self._connection.send(
             cast(ConnectClientEventParam, strip_not_given({"type": "session.input_audio.unmute", "event_id": event_id}))
@@ -1005,8 +1023,10 @@ class SidebandSessionInputAudioResource(BaseSidebandConnectionResource):
 
 class SidebandSessionInstructionsResource(BaseSidebandConnectionResource):
     def append(self, *, content: str, delegation_id: Optional[str], event_id: Optional[str] | Omit = omit) -> None:
-        """
-        Append instructions to the Live conversation while it is running, optionally associating them with an existing client delegation.
+        """Append developer instructions to the Live conversation while it is running,
+        optionally associating them with an existing client delegation.
+
+        Rejected while an audio fixture is active. These instructions remain in conversation history through compaction and are included in future backend delegations. For external audio, describe content already delivered so the assistant does not repeat it.
         """
         self._connection.send(
             cast(
@@ -1023,10 +1043,19 @@ class SidebandSessionInstructionsResource(BaseSidebandConnectionResource):
         )
 
 
+class SidebandSessionOutputAudioResource(BaseSidebandConnectionResource):
+    @cached_property
+    def fixture(self) -> SidebandSessionOutputAudioFixtureResource:
+        return SidebandSessionOutputAudioFixtureResource(self._connection)
+
+
 class SidebandSessionThinkingResource(BaseSidebandConnectionResource):
     def append(self, *, content: str, delegation_id: Optional[str], event_id: Optional[str] | Omit = omit) -> None:
         """
-        Provide silent reasoning or progress context to the Live model, optionally for an existing client delegation.
+        Provide silent reasoning or progress context to the Live model, optionally for
+        an existing client delegation.
+
+        Rejected while an audio fixture is active.
         """
         self._connection.send(
             cast(
@@ -1039,6 +1068,59 @@ class SidebandSessionThinkingResource(BaseSidebandConnectionResource):
                         "event_id": event_id,
                     }
                 ),
+            )
+        )
+
+
+class SidebandSessionOutputAudioFixtureResource(BaseSidebandConnectionResource):
+    def play(self, *, audio: str, event_id: Optional[str] | Omit = omit) -> None:
+        """Play one complete audio fixture through the session output.
+
+        Send this event over the primary WebSocket or a server sideband. Audio must be raw mono PCM16 little-endian at 24 kHz, regardless of the session audio format, and at most 30 seconds. The entire payload is validated before model speech is interrupted and input is muted. Only one fixture can be active. fixture.playing acknowledges acceptance and fixture.played reports server mixer drain. These notifications are not exact transport-media boundaries. Input arriving during playback is dropped and not replayed.
+        """
+        self._connection.send(
+            cast(
+                ConnectClientEventParam,
+                strip_not_given({"type": "session.output_audio.fixture.play", "audio": audio, "event_id": event_id}),
+            )
+        )
+
+
+class SidebandDecisionResource(BaseSidebandConnectionResource):
+    @cached_property
+    def item(self) -> SidebandDecisionItemResource:
+        return SidebandDecisionItemResource(self._connection)
+
+    def create(self, *, event_id: str) -> None:
+        """
+        Evaluate the configured questions using the current conversation and Decision
+        inputs.
+
+        Reusing an event_id is rejected for the lifetime of the session.
+        """
+        self._connection.send({"type": "decision.create", "event_id": event_id})
+
+
+class SidebandDecisionItemResource(BaseSidebandConnectionResource):
+    def delete(self, *, item_id: str, event_id: Optional[str] | Omit = omit) -> None:
+        """
+        Delete an input item from future decisions without starting an evaluation or changing Live voice context.
+        """
+        self._connection.send(
+            cast(
+                ConnectClientEventParam,
+                strip_not_given({"type": "decision.item.delete", "item_id": item_id, "event_id": event_id}),
+            )
+        )
+
+    def create(self, *, item: decision_item_create_event_param.Item, event_id: Optional[str] | Omit = omit) -> None:
+        """
+        Append an input item for future decisions without starting an evaluation or changing Live voice context.
+        """
+        self._connection.send(
+            cast(
+                ConnectClientEventParam,
+                strip_not_given({"type": "decision.item.create", "item": item, "event_id": event_id}),
             )
         )
 
@@ -1093,6 +1175,10 @@ class AsyncSidebandSessionResource(BaseAsyncSidebandConnectionResource):
         return AsyncSidebandSessionInstructionsResource(self._connection)
 
     @cached_property
+    def output_audio(self) -> AsyncSidebandSessionOutputAudioResource:
+        return AsyncSidebandSessionOutputAudioResource(self._connection)
+
+    @cached_property
     def thinking(self) -> AsyncSidebandSessionThinkingResource:
         return AsyncSidebandSessionThinkingResource(self._connection)
 
@@ -1106,7 +1192,8 @@ class AsyncSidebandSessionResource(BaseAsyncSidebandConnectionResource):
         )
 
     async def update(self, *, session: SessionUpdateConfigParam, event_id: Optional[str] | Omit = omit) -> None:
-        """Update the delegation settings of an active Live session.
+        """
+        Update the delegation settings or transcript triggers of an active Live session.
 
         The server acknowledges accepted changes with `session.updated`.
         """
@@ -1123,7 +1210,10 @@ class AsyncSidebandSessionCommentaryResource(BaseAsyncSidebandConnectionResource
         self, *, content: str, delegation_id: Optional[str], event_id: Optional[str] | Omit = omit
     ) -> None:
         """
-        Provide context the Live model can communicate to the user, optionally for an existing client delegation.
+        Provide context the Live model can communicate to the user, optionally for an
+        existing client delegation.
+
+        Rejected while an audio fixture is active.
         """
         await self._connection.send(
             cast(
@@ -1153,7 +1243,7 @@ class AsyncSidebandSessionInputAudioResource(BaseAsyncSidebandConnectionResource
     async def unmute(self, *, event_id: Optional[str] | Omit = omit) -> None:
         """Resume audio input to a Live model after muting it.
 
-        The server acknowledges with `session.input_audio.unmuted`.
+        The server acknowledges with `session.input_audio.unmuted`. An active audio fixture still pauses inference until playback finishes.
         """
         await self._connection.send(
             cast(ConnectClientEventParam, strip_not_given({"type": "session.input_audio.unmute", "event_id": event_id}))
@@ -1164,8 +1254,10 @@ class AsyncSidebandSessionInstructionsResource(BaseAsyncSidebandConnectionResour
     async def append(
         self, *, content: str, delegation_id: Optional[str], event_id: Optional[str] | Omit = omit
     ) -> None:
-        """
-        Append instructions to the Live conversation while it is running, optionally associating them with an existing client delegation.
+        """Append developer instructions to the Live conversation while it is running,
+        optionally associating them with an existing client delegation.
+
+        Rejected while an audio fixture is active. These instructions remain in conversation history through compaction and are included in future backend delegations. For external audio, describe content already delivered so the assistant does not repeat it.
         """
         await self._connection.send(
             cast(
@@ -1182,12 +1274,21 @@ class AsyncSidebandSessionInstructionsResource(BaseAsyncSidebandConnectionResour
         )
 
 
+class AsyncSidebandSessionOutputAudioResource(BaseAsyncSidebandConnectionResource):
+    @cached_property
+    def fixture(self) -> AsyncSidebandSessionOutputAudioFixtureResource:
+        return AsyncSidebandSessionOutputAudioFixtureResource(self._connection)
+
+
 class AsyncSidebandSessionThinkingResource(BaseAsyncSidebandConnectionResource):
     async def append(
         self, *, content: str, delegation_id: Optional[str], event_id: Optional[str] | Omit = omit
     ) -> None:
         """
-        Provide silent reasoning or progress context to the Live model, optionally for an existing client delegation.
+        Provide silent reasoning or progress context to the Live model, optionally for
+        an existing client delegation.
+
+        Rejected while an audio fixture is active.
         """
         await self._connection.send(
             cast(
@@ -1200,6 +1301,61 @@ class AsyncSidebandSessionThinkingResource(BaseAsyncSidebandConnectionResource):
                         "event_id": event_id,
                     }
                 ),
+            )
+        )
+
+
+class AsyncSidebandSessionOutputAudioFixtureResource(BaseAsyncSidebandConnectionResource):
+    async def play(self, *, audio: str, event_id: Optional[str] | Omit = omit) -> None:
+        """Play one complete audio fixture through the session output.
+
+        Send this event over the primary WebSocket or a server sideband. Audio must be raw mono PCM16 little-endian at 24 kHz, regardless of the session audio format, and at most 30 seconds. The entire payload is validated before model speech is interrupted and input is muted. Only one fixture can be active. fixture.playing acknowledges acceptance and fixture.played reports server mixer drain. These notifications are not exact transport-media boundaries. Input arriving during playback is dropped and not replayed.
+        """
+        await self._connection.send(
+            cast(
+                ConnectClientEventParam,
+                strip_not_given({"type": "session.output_audio.fixture.play", "audio": audio, "event_id": event_id}),
+            )
+        )
+
+
+class AsyncSidebandDecisionResource(BaseAsyncSidebandConnectionResource):
+    @cached_property
+    def item(self) -> AsyncSidebandDecisionItemResource:
+        return AsyncSidebandDecisionItemResource(self._connection)
+
+    async def create(self, *, event_id: str) -> None:
+        """
+        Evaluate the configured questions using the current conversation and Decision
+        inputs.
+
+        Reusing an event_id is rejected for the lifetime of the session.
+        """
+        await self._connection.send({"type": "decision.create", "event_id": event_id})
+
+
+class AsyncSidebandDecisionItemResource(BaseAsyncSidebandConnectionResource):
+    async def delete(self, *, item_id: str, event_id: Optional[str] | Omit = omit) -> None:
+        """
+        Delete an input item from future decisions without starting an evaluation or changing Live voice context.
+        """
+        await self._connection.send(
+            cast(
+                ConnectClientEventParam,
+                strip_not_given({"type": "decision.item.delete", "item_id": item_id, "event_id": event_id}),
+            )
+        )
+
+    async def create(
+        self, *, item: decision_item_create_event_param.Item, event_id: Optional[str] | Omit = omit
+    ) -> None:
+        """
+        Append an input item for future decisions without starting an evaluation or changing Live voice context.
+        """
+        await self._connection.send(
+            cast(
+                ConnectClientEventParam,
+                strip_not_given({"type": "decision.item.create", "item": item, "event_id": event_id}),
             )
         )
 
