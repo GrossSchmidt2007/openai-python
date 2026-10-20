@@ -70237,6 +70237,11 @@ components:
           - type: string
             description: When `group_by=service_tier`, this field provides the service tier of the grouped usage result.
           - type: 'null'
+        input_cache_write_30m_tokens:
+          anyOf:
+          - type: integer
+            description: The aggregated number of input tokens written to the cache with a 30-minute retention period. May be absent or null for older responses.
+          - type: 'null'
       required:
       - object
       - input_tokens
@@ -77026,6 +77031,14 @@ components:
       description: The streamed output emitted by an apply patch tool call.
     CompactionTriggerItemParam:
       properties:
+        id:
+          anyOf:
+          - type: string
+            description: The unique ID of this compaction trigger.
+            example: msg_123
+          - type: 'null'
+          x-stainless-skip:
+          - java
         type:
           type: string
           enum:
@@ -77038,6 +77051,8 @@ components:
       - type
       title: Compaction trigger
       description: Compacts the current context. Must be the final input item.
+      x-openai-java-raw-discriminator-variant: true
+      x-stainless-go-constant-constructor: true
     ItemReferenceParam:
       properties:
         type:
@@ -79226,6 +79241,11 @@ components:
           anyOf:
           - type: string
             description: When `group_by=service_tier`, this field provides the service tier of the grouped usage result.
+          - type: 'null'
+        input_cache_write_30m_tokens:
+          anyOf:
+          - type: integer
+            description: The aggregated number of input tokens written to the cache with a 30-minute retention period.
           - type: 'null'
       type: object
       required:
@@ -95923,6 +95943,12 @@ components:
           anyOf:
           - $ref: '#/components/schemas/Beta_AgentTagParam'
             description: The agent that produced this item.
+          - type: 'null'
+        id:
+          anyOf:
+          - type: string
+            description: The unique ID of this compaction trigger.
+            example: msg_123
           - type: 'null'
         type:
           type: string
