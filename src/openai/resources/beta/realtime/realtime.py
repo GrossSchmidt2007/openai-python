@@ -30,7 +30,7 @@ from ...._httpx2 import normalize_httpx_url
 from ...._models import construct_type_unchecked
 from ...._resource import SyncAPIResource, AsyncAPIResource
 from ...._exceptions import OpenAIError
-from ...._base_client import _merge_mappings
+from ...._base_client import _merge_headers
 from ....types.beta.realtime import (
     session_update_event_param,
     response_create_event_param,
@@ -383,15 +383,16 @@ class AsyncRealtimeConnectionManager:
             log.debug("Custom WebSocket connection options provided")
 
         options: WebsocketConnectionOptions = {"max_size": None, **self.__websocket_connection_options}
+        if options["max_size"] is None:
+            options.setdefault("compression", None)
         self.__connection = AsyncRealtimeConnection(
             await connect(
                 str(url),
-                user_agent_header=self.__client.user_agent,
-                additional_headers=_merge_mappings(
-                    {
-                        **auth_headers,
-                        "OpenAI-Beta": "realtime=v1",
-                    },
+                user_agent_header=None,
+                additional_headers=_merge_headers(
+                    auth_headers,
+                    self.__client.default_headers,
+                    {"OpenAI-Beta": "realtime=v1"},
                     self.__extra_headers,
                 ),
                 **options,
@@ -577,15 +578,16 @@ class RealtimeConnectionManager:
             log.debug("Custom WebSocket connection options provided")
 
         options: SyncWebSocketConnectionOptions = {"max_size": None, **self.__websocket_connection_options}
+        if options["max_size"] is None:
+            options.setdefault("compression", None)
         self.__connection = RealtimeConnection(
             connect(
                 str(url),
-                user_agent_header=self.__client.user_agent,
-                additional_headers=_merge_mappings(
-                    {
-                        **auth_headers,
-                        "OpenAI-Beta": "realtime=v1",
-                    },
+                user_agent_header=None,
+                additional_headers=_merge_headers(
+                    auth_headers,
+                    self.__client.default_headers,
+                    {"OpenAI-Beta": "realtime=v1"},
                     self.__extra_headers,
                 ),
                 **options,
