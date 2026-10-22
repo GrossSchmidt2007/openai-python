@@ -142,9 +142,7 @@ class AsyncSidebandConnection(AsyncWebSocketConnectionBase):
             max_delay=max_delay,
             extra_query=extra_query,
             extra_headers=extra_headers,
-            send_queue=(
-                send_queue if send_queue is not None else SendQueue(max_bytes=DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES)
-            ),
+            send_queue=send_queue if send_queue is not None else SendQueue(max_bytes=DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES),
             logger=log,
         )
         self._event_handler_registry = EventHandlerRegistry(use_lock=False)
@@ -465,17 +463,18 @@ class AsyncSidebandConnectionManager:
             raise OpenAIError("You need to install `openai[realtime]` to use this method") from exc
 
         url = self._prepare_url()
+        try:
+            # Older runtimes do not declare this optional helper.
+            query_params = getattr(self.__client, "_websocket_query_params")  # noqa: B009
+        except AttributeError:
+            query_params = self.__client._websocket_query_params_fallback
         url = url.copy_with(
-            params=httpx2.QueryParams(self.__client.qs.stringify(cast(Any, self.__client.default_query)))
-            .merge(url.params)
-            .merge(
-                cast(
-                    Any,
-                    {
-                        **({"graceful_close": self.__graceful_close} if self.__graceful_close is not omit else {}),
-                        **extra_query,
-                    },
-                )
+            params=query_params(
+                url,
+                {
+                    **({"graceful_close": self.__graceful_close} if self.__graceful_close is not omit else {}),
+                    **extra_query,
+                },
             ),
         )
         url = url.copy_with(scheme={"http": "ws", "https": "wss"}.get(url.scheme, url.scheme))
@@ -526,8 +525,12 @@ class AsyncSidebandConnectionManager:
             base_url = self.__client._base_url.copy_with(scheme=ws_scheme)
 
         path, separator, query = base_url.raw_path.partition(b"?")
-        endpoint = path_template("/live/sessions/{session_id}/attach", session_id=self.__session_id).encode("utf-8")
-        merge_raw_path = path.rstrip(b"/") + endpoint + separator + query
+        merge_raw_path = (
+            path.rstrip(b"/")
+            + path_template("/live/sessions/{session_id}/attach", session_id=self.__session_id).encode("utf-8")
+            + separator
+            + query
+        )
         return base_url.copy_with(raw_path=merge_raw_path)
 
     async def __aexit__(
@@ -568,9 +571,7 @@ class SidebandConnection(WebSocketConnectionBase):
             max_delay=max_delay,
             extra_query=extra_query,
             extra_headers=extra_headers,
-            send_queue=(
-                send_queue if send_queue is not None else SendQueue(max_bytes=DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES)
-            ),
+            send_queue=send_queue if send_queue is not None else SendQueue(max_bytes=DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES),
             logger=log,
         )
         self._event_handler_registry = EventHandlerRegistry(use_lock=True)
@@ -887,17 +888,18 @@ class SidebandConnectionManager:
             raise OpenAIError("You need to install `openai[realtime]` to use this method") from exc
 
         url = self._prepare_url()
+        try:
+            # Older runtimes do not declare this optional helper.
+            query_params = getattr(self.__client, "_websocket_query_params")  # noqa: B009
+        except AttributeError:
+            query_params = self.__client._websocket_query_params_fallback
         url = url.copy_with(
-            params=httpx2.QueryParams(self.__client.qs.stringify(cast(Any, self.__client.default_query)))
-            .merge(url.params)
-            .merge(
-                cast(
-                    Any,
-                    {
-                        **({"graceful_close": self.__graceful_close} if self.__graceful_close is not omit else {}),
-                        **extra_query,
-                    },
-                )
+            params=query_params(
+                url,
+                {
+                    **({"graceful_close": self.__graceful_close} if self.__graceful_close is not omit else {}),
+                    **extra_query,
+                },
             ),
         )
         url = url.copy_with(scheme={"http": "ws", "https": "wss"}.get(url.scheme, url.scheme))
@@ -948,8 +950,12 @@ class SidebandConnectionManager:
             base_url = self.__client._base_url.copy_with(scheme=ws_scheme)
 
         path, separator, query = base_url.raw_path.partition(b"?")
-        endpoint = path_template("/live/sessions/{session_id}/attach", session_id=self.__session_id).encode("utf-8")
-        merge_raw_path = path.rstrip(b"/") + endpoint + separator + query
+        merge_raw_path = (
+            path.rstrip(b"/")
+            + path_template("/live/sessions/{session_id}/attach", session_id=self.__session_id).encode("utf-8")
+            + separator
+            + query
+        )
         return base_url.copy_with(raw_path=merge_raw_path)
 
     def __exit__(

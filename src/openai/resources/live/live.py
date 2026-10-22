@@ -359,9 +359,7 @@ class AsyncLiveConnection(AsyncWebSocketConnectionBase):
             max_delay=max_delay,
             extra_query=extra_query,
             extra_headers=extra_headers,
-            send_queue=(
-                send_queue if send_queue is not None else SendQueue(max_bytes=DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES)
-            ),
+            send_queue=send_queue if send_queue is not None else SendQueue(max_bytes=DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES),
             logger=log,
         )
         self._event_handler_registry = EventHandlerRegistry(use_lock=False)
@@ -676,10 +674,16 @@ class AsyncLiveConnectionManager:
             raise OpenAIError("You need to install `openai[realtime]` to use this method") from exc
 
         url = self._prepare_url()
+        try:
+            # Older runtimes do not declare this optional helper.
+            query_params = getattr(self.__client, "_websocket_query_params")  # noqa: B009
+        except AttributeError:
+            query_params = self.__client._websocket_query_params_fallback
         url = url.copy_with(
-            params=httpx2.QueryParams(self.__client.qs.stringify(cast(Any, self.__client.default_query)))
-            .merge(url.params)
-            .merge(cast(Any, extra_query)),
+            params=query_params(
+                url,
+                extra_query,
+            ),
         )
         url = url.copy_with(scheme={"http": "ws", "https": "wss"}.get(url.scheme, url.scheme))
         options = await self.__client._prepare_options(
@@ -770,9 +774,7 @@ class LiveConnection(WebSocketConnectionBase):
             max_delay=max_delay,
             extra_query=extra_query,
             extra_headers=extra_headers,
-            send_queue=(
-                send_queue if send_queue is not None else SendQueue(max_bytes=DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES)
-            ),
+            send_queue=send_queue if send_queue is not None else SendQueue(max_bytes=DEFAULT_LIVE_SEND_QUEUE_MAX_BYTES),
             logger=log,
         )
         self._event_handler_registry = EventHandlerRegistry(use_lock=True)
@@ -1082,10 +1084,16 @@ class LiveConnectionManager:
             raise OpenAIError("You need to install `openai[realtime]` to use this method") from exc
 
         url = self._prepare_url()
+        try:
+            # Older runtimes do not declare this optional helper.
+            query_params = getattr(self.__client, "_websocket_query_params")  # noqa: B009
+        except AttributeError:
+            query_params = self.__client._websocket_query_params_fallback
         url = url.copy_with(
-            params=httpx2.QueryParams(self.__client.qs.stringify(cast(Any, self.__client.default_query)))
-            .merge(url.params)
-            .merge(cast(Any, extra_query)),
+            params=query_params(
+                url,
+                extra_query,
+            ),
         )
         url = url.copy_with(scheme={"http": "ws", "https": "wss"}.get(url.scheme, url.scheme))
         options = self.__client._prepare_options(
