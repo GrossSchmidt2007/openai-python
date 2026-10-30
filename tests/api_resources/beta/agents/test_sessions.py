@@ -30,6 +30,8 @@ class TestSessions:
         session = client.beta.agents.sessions.create(
             environment={"type": "none"},
             agent={
+                "compaction": {"async_": True},
+                "experimental": {"time_awareness": True},
                 "instructions": "instructions",
                 "model": "model",
                 "multi_agent": {
@@ -102,6 +104,8 @@ class TestSessions:
             environment={"type": "none"},
             stream=True,
             agent={
+                "compaction": {"async_": True},
+                "experimental": {"time_awareness": True},
                 "instructions": "instructions",
                 "model": "model",
                 "multi_agent": {
@@ -344,6 +348,8 @@ class TestAsyncSessions:
         session = await async_client.beta.agents.sessions.create(
             environment={"type": "none"},
             agent={
+                "compaction": {"async_": True},
+                "experimental": {"time_awareness": True},
                 "instructions": "instructions",
                 "model": "model",
                 "multi_agent": {
@@ -416,6 +422,8 @@ class TestAsyncSessions:
             environment={"type": "none"},
             stream=True,
             agent={
+                "compaction": {"async_": True},
+                "experimental": {"time_awareness": True},
                 "instructions": "instructions",
                 "model": "model",
                 "multi_agent": {

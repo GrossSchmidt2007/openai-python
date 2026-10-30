@@ -44419,6 +44419,8 @@ components:
           example: high
           description: |
             The quality of the image that will be generated for GPT image models. The GPT image models support `low`, `medium`, and `high`. `gpt-image-2.5-sunburst` and `gpt-image-2.5-flare`, including their `2026-09-08` snapshots, also support `xhigh` and `max`. Defaults to `auto`.
+        markup:
+          $ref: '#/components/schemas/markup'
       required:
       - prompt
       - image
@@ -46985,6 +46987,9 @@ components:
           description: Stream partial image results as events.
         partial_images:
           $ref: '#/components/schemas/PartialImages'
+        markup:
+          $ref: '#/components/schemas/ImageRefParam'
+          description: A transparent PNG overlaid on the first image, referenced by file ID, HTTPS URL, or base64 data URL. Must match that image's dimensions after orientation and contain transparent pixels. Supports GPT Image 2.5 and 2.6. Cannot be combined with mask.
       required:
       - images
       - prompt
@@ -85063,6 +85068,12 @@ components:
         multi_agent:
           $ref: '#/components/schemas/MultiAgentConfigResource'
           description: The configuration for creating and coordinating subagents.
+        compaction:
+          $ref: '#/components/schemas/CompactionResource'
+          description: The effective context compaction settings.
+        experimental:
+          $ref: '#/components/schemas/ExperimentalConfigResource'
+          description: The effective experimental settings for the agent.
       required:
       - model
       - reasoning
@@ -86500,8 +86511,17 @@ components:
           minItems: 0
           maxItems: 16384
           description: Tools available to the agent. Omit to inherit, or pass null to clear them. The resolved tool list must fit within 3 MiB (3,145,728 bytes) of compact UTF-8 JSON.
+        compaction:
+          anyOf:
+          - $ref: '#/components/schemas/CompactionParam'
+          - type: 'null'
+          description: Context compaction settings. Omit to keep the current settings. A supplied object replaces the settings; null or an empty object enables background compaction.
+        experimental:
+          $ref: '#/components/schemas/ExperimentalConfigOverridesParam'
+          default: {}
+          description: Experimental settings to merge by key. Omitted settings keep their current values.
       additionalProperties: false
-      description: Agent configuration for a session. Omitted fields inherit from `agent_id` when supplied. Supplied objects and arrays replace the whole field; null resets nullable fields.
+      description: Agent configuration for a session. Omitted fields inherit from `agent_id` when supplied. Supplied objects and arrays replace the whole field, except experimental settings, which merge by key. Null resets nullable fields.
     EnvironmentParamNone:
       type: object
       properties:
@@ -89969,6 +89989,12 @@ components:
         multi_agent:
           $ref: '#/components/schemas/MultiAgentConfigResource'
           description: The resolved configuration for creating and coordinating subagents.
+        compaction:
+          $ref: '#/components/schemas/CompactionResource'
+          description: The effective context compaction settings.
+        experimental:
+          $ref: '#/components/schemas/ExperimentalConfigResource'
+          description: The effective experimental settings for the agent.
       required:
       - id
       - object
@@ -90423,6 +90449,16 @@ components:
           - $ref: '#/components/schemas/MultiAgentConfigCurrentParam'
           - type: 'null'
           description: Configuration for creating and coordinating subagents. Subagent tools are disabled by default.
+        compaction:
+          anyOf:
+          - $ref: '#/components/schemas/CompactionParam'
+          - type: 'null'
+          description: Context compaction settings. Omission or null enables background compaction.
+        experimental:
+          $ref: '#/components/schemas/ExperimentalConfigParam'
+          default:
+            time_awareness: false
+          description: Experimental agent settings. All experimental features default to disabled.
       required:
       - model
       additionalProperties: false
@@ -90493,6 +90529,15 @@ components:
           minItems: 0
           maxItems: 2000
           description: Replaces the tool list. Omit to leave it unchanged, or pass null to clear it. The replacement must fit within 3 MiB (3,145,728 bytes) of compact UTF-8 JSON.
+        compaction:
+          anyOf:
+          - $ref: '#/components/schemas/CompactionParam'
+          - type: 'null'
+          description: Context compaction settings. Omit to keep the current settings. A supplied object replaces the settings; null or an empty object enables background compaction.
+        experimental:
+          $ref: '#/components/schemas/ExperimentalConfigOverridesParam'
+          default: {}
+          description: Experimental settings to merge by key. Omitted settings keep their current values.
       additionalProperties: false
       description: Fields to replace on an existing reusable agent.
     DeletedAgentResource:
@@ -91075,6 +91120,12 @@ components:
         multi_agent:
           $ref: '#/components/schemas/MultiAgentConfigResource'
           description: Configuration for creating and coordinating subagents.
+        compaction:
+          $ref: '#/components/schemas/CompactionResource'
+          description: The effective context compaction settings.
+        experimental:
+          $ref: '#/components/schemas/ExperimentalConfigResource'
+          description: The effective experimental settings for the agent.
       required:
       - id
       - name
@@ -111061,6 +111112,57 @@ components:
           type: transport.dtmf.sent
           event_id: event_dtmf_2
           event: '#'
+    CompactionParam:
+      type: object
+      properties:
+        async:
+          type:
+          - boolean
+          - 'null'
+          description: Whether to compact context in the background. Omission or null defaults to true. Set to false to use blocking compaction. Background compaction may increase token usage.
+      additionalProperties: false
+      description: Settings for compacting the agent's context.
+    CompactionResource:
+      type: object
+      properties:
+        async:
+          type: boolean
+          description: Whether context is compacted in the background. Defaults to true.
+      required:
+      - async
+      additionalProperties: false
+      description: The effective settings for compacting the agent's context.
+    markup:
+      type: string
+      format: binary
+      description: A transparent PNG overlaid on the first image to guide the edit. Must match that image's dimensions after orientation and contain transparent pixels. Supports GPT Image 2.5 and 2.6. Cannot be combined with mask.
+    ExperimentalConfigOverridesParam:
+      type: object
+      properties:
+        time_awareness:
+          type: boolean
+          description: Whether to give the model periodic current-time reminders. Omit to keep the current setting.
+      additionalProperties: false
+      description: Experimental settings to update. Omitted settings keep their current values.
+    ExperimentalConfigParam:
+      type: object
+      properties:
+        time_awareness:
+          type: boolean
+          default: false
+          description: Whether to give the model periodic current-time reminders. Defaults to false.
+      additionalProperties: false
+      description: Experimental agent settings. These features may change.
+    ExperimentalConfigResource:
+      type: object
+      properties:
+        time_awareness:
+          type: boolean
+          description: Whether the model receives periodic current-time reminders.
+      required:
+      - time_awareness
+      additionalProperties: false
+      description: The effective experimental settings for an agent.
     SessionSpendControlResource:
       type: object
       properties:
